@@ -14,6 +14,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   cache->block_size = block_size;  // in Bytes
   cache->assoc = assoc;            // 1, 2, 3... etc.
 
+  // TODO: initialization
   // FIX THIS CODE!
   // first, correctly set these 5 variables. THEY ARE ALL WRONG
   // note: you may find math.h's log2 function useful
