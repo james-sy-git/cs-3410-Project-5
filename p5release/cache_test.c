@@ -37,10 +37,13 @@ void testOffSet(){
 
 void testAccessBasic(){
     cache_t *test1 = make_cache(1024, 4, 2, NONE, false);
-    printf("Expected Tag: 0x0000007f, actual: %lx\n", get_cache_index(test1, 0b1111111100));
 
-    printf("Expected: false, Actual: %d\n", access_cache(test1, 0b1111111100, LOAD));
-    printf("Expected: true, Actual: %d\n", access_cache(test1, 0b1111111100, LOAD));
+    // 0b1 1111111 00
+    // 0b11 1111111 00
+    printf("Expected: false, Actual: %d\n", access_cache(test1,  0b1111111100, LOAD));
+    printf("Expected: false, Actual: %d\n", access_cache(test1, 0b11111111100, LOAD));
+    printf("Expected: true, Actual: %d\n", access_cache(test1,   0b1111111100, LOAD));
+    printf("Expected: true, Actual: %d\n", access_cache(test1,  0b11111111100, LOAD));
 
 }
 int main(){

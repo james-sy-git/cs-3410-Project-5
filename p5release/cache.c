@@ -32,7 +32,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   for(int i = 0; i< cache->n_set; i++){
     cache->lines[i]=malloc(sizeof(cache_line_t*) * assoc);
   }
-  cache->lru_way = NULL;
+  cache->lru_way = malloc(cache->n_set * sizeof(int));
 
   // initializes cache tags to 0, dirty bits to false,
   // state to INVALID, and LRU bits to 0
@@ -43,6 +43,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
       cache->lines[i][j].tag = 0; 
       cache->lines[i][j].state = INVALID; 
     }
+    cache->lru_way[i] = 0;
   }
 
   cache->protocol = protocol;
@@ -94,7 +95,6 @@ unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
  * in decimal -- get_cache_block_addr(3921) returns 3920
  */
 unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
-  // FIX THIS CODE!
   addr = addr >> cache->n_offset_bit;
   return addr << cache->n_offset_bit;
 }
@@ -109,16 +109,19 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  * Use the "get" helper functions above. They make your life easier.
  */
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  // FIX THIS CODE!
 
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
   unsigned long block_addr = get_cache_block_addr(cache, addr);
   
-  cache_line_t line = cache->lines[index][0];
+  int lru = cache->lru_way[index];
+  // printf("start lru: %d\n", lru);
+  cache_line_t line = cache->lines[index][lru];
 
   bool hit = line.tag == tag;
-  cache->lines[index][0].tag = tag;
+
+  cache->lines[index][lru].tag = tag;
+  cache->lru_way[index] = (cache->lru_way[index] + 1) % cache->assoc;
 
   return hit;
 }
