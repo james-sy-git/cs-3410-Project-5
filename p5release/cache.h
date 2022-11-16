@@ -43,6 +43,7 @@ typedef struct {
   
   // only 1 dimension b/c LRU field is for the entire set
   // ignore this until you begin support for the n-way set associative cache
+  // it should be an array
   int *lru_way;
 
   cache_stats_t *stats;

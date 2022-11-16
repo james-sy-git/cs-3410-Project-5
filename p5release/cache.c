@@ -71,8 +71,20 @@ unsigned long get_cache_tag(cache_t *cache, unsigned long addr) {
 unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
   // FIX THIS CODE!
   addr = addr >> cache->n_offset_bit;
+  // printf("addr: %lx\n", addr);
   addr = addr << (cache->n_tag_bit + cache->n_offset_bit);
-  return addr >> (cache->n_tag_bit + cache->n_offset_bit);
+  unsigned long bitmask = 0;
+  bitmask = ~bitmask >> (sizeof(long)*8 - ADDRESS_SIZE);
+  addr = addr & bitmask;
+
+  // printf("addr: %lx\n", addr);
+  // printf("size of long: %ld\n", sizeof(long));
+  // printf("shifted by %d\n", cache->n_tag_bit + cache->n_offset_bit);
+  addr = addr >> (cache->n_tag_bit + cache->n_offset_bit);
+  
+  // printf("addr: %lx\n", addr);
+
+  return addr;
 }
 
 /* Given a configured cache, returns the given address with the offset bits zeroed out.
@@ -99,6 +111,14 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   // FIX THIS CODE!
 
+  unsigned long tag = get_cache_tag(cache, addr);
+  unsigned long index = get_cache_index(cache, addr);
+  unsigned long block_addr = get_cache_block_addr(cache, addr);
+  
+  cache_line_t line = cache->lines[index][0];
 
-  return true;  // cache hit should return true
+  bool hit = line.tag == tag;
+  cache->lines[index][0].tag = tag;
+
+  return hit;
 }
