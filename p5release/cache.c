@@ -55,7 +55,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
  */
 unsigned long get_cache_tag(cache_t *cache, unsigned long addr) {
   // FIX THIS CODE!
-  return 0;
+  return addr >> (ADDRESS_SIZE - cache->n_tag_bit);
 }
 
 /* Given a configured cache, returns the index portion of the given address.
@@ -66,7 +66,9 @@ unsigned long get_cache_tag(cache_t *cache, unsigned long addr) {
  */
 unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
   // FIX THIS CODE!
-  return 0;
+  addr = addr >> cache->n_offset_bit;
+  addr = addr << (cache->n_tag_bit + cache->n_offset_bit);
+  return addr >> (cache->n_tag_bit + cache->n_offset_bit);
 }
 
 /* Given a configured cache, returns the given address with the offset bits zeroed out.
@@ -77,7 +79,8 @@ unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
  */
 unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
   // FIX THIS CODE!
-  return 0;
+  addr = addr >> cache->n_offset_bit;
+  return addr << cache->n_offset_bit;
 }
 
 
