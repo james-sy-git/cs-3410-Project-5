@@ -115,7 +115,6 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   unsigned long block_addr = get_cache_block_addr(cache, addr);
   
   int lru = cache->lru_way[index];
-  // printf("start lru: %d\n", lru);
   cache_line_t line = cache->lines[index][lru];
 
   bool hit = line.tag == tag;
@@ -123,5 +122,18 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   cache->lines[index][lru].tag = tag;
   cache->lru_way[index] = (cache->lru_way[index] + 1) % cache->assoc;
 
+  // if store, not writing back
+  // if load, and the info in this line is dirty, then writeback, and set dirty to false
+  bool writeback_f = false;
+  if(action == STORE){
+    cache->lines[index][lru].dirty_f = true;
+  }else if(cache->lines[index][lru].dirty_f){
+    writeback_f = true;
+    cache->lines[index][lru].dirty_f = false;
+  }
+
+  //TODO: upgrade_miss_f
+  update_stats(cache->stats, hit, writeback_f, false, action);
+  
   return hit;
 }
