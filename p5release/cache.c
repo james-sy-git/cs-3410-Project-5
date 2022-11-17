@@ -18,10 +18,10 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   // first, correctly set these 5 variables. THEY ARE ALL WRONG
   // note: you may find math.h's log2 function useful
   cache->n_cache_line = capacity/block_size;
-  cache->n_set = capacity/(assoc*block_size);
+  cache->n_set = capacity/(assoc * block_size);
   cache->n_offset_bit = log2(block_size);
-  cache->n_index_bit = log2(capacity/(assoc*block_size));
-  cache->n_tag_bit = ADDRESS_SIZE-log2(block_size)-log2(capacity/(assoc*block_size));
+  cache->n_index_bit = log2(capacity/(assoc * block_size));
+  cache->n_tag_bit = ADDRESS_SIZE-log2(block_size)-log2(capacity/(assoc * block_size));
 
   // next create the cache lines and the array of LRU bits
   // - malloc an array with n_rows
@@ -75,15 +75,10 @@ unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
   // printf("addr: %lx\n", addr);
   addr = addr << (cache->n_tag_bit + cache->n_offset_bit);
   unsigned long bitmask = 0;
-  bitmask = ~bitmask >> (sizeof(long)*8 - ADDRESS_SIZE);
+  bitmask = ~bitmask >> (sizeof(long) * 8 - ADDRESS_SIZE);
   addr = addr & bitmask;
 
-  // printf("addr: %lx\n", addr);
-  // printf("size of long: %ld\n", sizeof(long));
-  // printf("shifted by %d\n", cache->n_tag_bit + cache->n_offset_bit);
   addr = addr >> (cache->n_tag_bit + cache->n_offset_bit);
-  
-  // printf("addr: %lx\n", addr);
 
   return addr;
 }
@@ -121,7 +116,6 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // bring new memory into lru
       if(cache->lines[index][cache->lru_way[index]].dirty_f){
         writeback_f = true; //writeback original dirty data
-        // printf("load write back\n");
         cache->lines[index][cache->lru_way[index]].dirty_f = false;
       }
 
@@ -137,9 +131,8 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       }
 
       //increment lru sinced we are kicking original data out. 
-      int res = (cache->lru_way[index] +1) % cache->assoc; 
+      int res = (cache->lru_way[index] + 1) % cache->assoc; 
       cache->lru_way[index] = res;
-      // printf("read lru %d\n", res);
 
     }else {
       // if it's a load hit, no data is kicked out, no need to do anything other than logging
@@ -153,7 +146,6 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
     if(hit){
       int res = (cursor + 1) % cache->assoc; // update lru to next
       cache->lru_way[index] = res;
-      // printf("write hit lru %d\n", res);
 
       cache->lines[index][cursor].dirty_f = true; // set dirty to the hit line to true
       // If in the MSI protocol, a store hit on the local cache turns the state from shared to modified
@@ -198,8 +190,9 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
 }
 
 /**
- * helper method to handle state changes and writebacks
- * for MSI protocol
+ * Helper method to handle state changes and writebacks
+ * for MSI protocol that returns true if a writeback is
+ * necessary, false if not.
  */
 bool msi_helper(cache_t *cache, enum action_t action, bool hit, unsigned long index, int cursor) {
   bool ret = false; // return value
@@ -233,7 +226,6 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
   
-  // printf("get here 2\n");
   // regardless of load or store, if tag match means cache hit
   bool hit = false;
   int cursor = 0; 
