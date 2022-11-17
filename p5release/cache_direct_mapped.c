@@ -30,9 +30,9 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
 
   cache->lines = malloc(cache->n_set * sizeof(cache_line_t*));
   for(int i = 0; i< cache->n_set; i++){
-    cache->lines[i]=malloc(sizeof(cache_line_t) * assoc);
+    cache->lines[i]=malloc(sizeof(cache_line_t*) * assoc);
   }
-  cache->lru_way = malloc(cache->n_set * sizeof(int));
+  cache->lru_way = NULL;
 
   // initializes cache tags to 0, dirty bits to false,
   // state to INVALID, and LRU bits to 0
@@ -43,7 +43,6 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
       cache->lines[i][j].tag = 0; 
       cache->lines[i][j].state = INVALID; 
     }
-    cache->lru_way[i] = 0;
   }
 
   cache->protocol = protocol;
@@ -95,6 +94,7 @@ unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
  * in decimal -- get_cache_block_addr(3921) returns 3920
  */
 unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
+  // FIX THIS CODE!
   addr = addr >> cache->n_offset_bit;
   return addr << cache->n_offset_bit;
 }
@@ -108,144 +108,17 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  * return true if there was a hit, false if there was a miss
  * Use the "get" helper functions above. They make your life easier.
  */
-int count = 0;
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  if(cache->protocol == MSI){
-    msi_access_cache(cache, addr, action);
-  }
-  count++;
-  
+  // FIX THIS CODE!
+
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
+  unsigned long block_addr = get_cache_block_addr(cache, addr);
   
-  int lru = cache->lru_way[index];
+  cache_line_t line = cache->lines[index][0];
 
-  // printf("get here 2\n");
-  // regardless of load or store, if tag match means cache hit
-  bool hit = false;
-  int cursor = 0; 
-  // printf("tag to find: %lx\n", tag);
-  // printf("get here 3\n");
+  bool hit = line.tag == tag;
+  cache->lines[index][0].tag = tag;
 
-
-  while(cursor < cache->assoc){
-    // printf("current cursor: %d\n", cursor);
-    // printf("tag at cursor: %lx\n", cache->lines[index][cursor].tag);
-    if(cache->lines[index][cursor].tag == tag && 
-        cache->lines[index][cursor].state == VALID){
-      hit = true;
-      // printf("hit\n");
-      break;
-    }
-    cursor++;
-  }
-
-  bool writeback_f = false;
- 
-
-  if(action == LOAD){
-    if(!hit){
-      // printf("get here 1\n");
-
-      // bring new memory into lru
-      if(cache->lines[index][cache->lru_way[index]].dirty_f){
-        writeback_f = true; //writeback original dirty data
-        // printf("load write back\n");
-        cache->lines[index][cache->lru_way[index]].dirty_f = false;
-      }
-
-      log_way(lru);
-      cache->lines[index][cache->lru_way[index]].tag = tag; // kick original data out, update tag
-      // valid data at here
-      cache->lines[index][cache->lru_way[index]].state = VALID;
-
-      //increment lru sinced we are kicking original data out. 
-      int res = (cache->lru_way[index] +1) % cache->assoc; 
-      cache->lru_way[index] = res;
-      // printf("read lru %d\n", res);
-
-    }else {
-      // if it's a load hit, no data is kicked out, no need to do anything other than logging
-      // printf("get here 2\n");
-      int res = (cursor + 1) % cache->assoc; // update lru to next
-      cache->lru_way[index] = res;
-      log_way(cursor);
-    }
-
-  }else if(action == STORE){
-    if(hit){
-      int res = (cursor + 1) % cache->assoc; // update lru to next
-      cache->lru_way[index] = res;
-      // printf("write hit lru %d\n", res);
-
-      cache->lines[index][cursor].dirty_f = true; // set dirty to the hit line to true
-      log_way(cursor);
-      
-    }else{
-      // store miss, writing to lru
-      if(cache->lines[index][cache->lru_way[index]].dirty_f){
-        // if data at lru is dirty, write back first
-        writeback_f = true; 
-        // printf("store write back\n");
-
-      }
-      
-      // log way: 
-      log_way(lru);
-      // kick out data first
-      cache->lines[index][cache->lru_way[index]].tag = tag;
-      // set dirty
-      cache->lines[index][cache->lru_way[index]].dirty_f = true;
-      // valid data at here
-      cache->lines[index][cache->lru_way[index]].state = VALID;
-
-      // update lru
-      int res = (cache->lru_way[index] + 1) % cache->assoc; 
-      cache->lru_way[index] = res;
-  
-    }
-  }
-  //TASK 9 (?)
-  else if (cache->protocol == VI)
-  {
-    if (hit)
-    {
-      if (action == LD_MISS || action == ST_MISS)
-      {
-        if (cache->lines[index][cursor].state == VALID)
-        {
-          cache->lines[index][cursor].state = INVALID;
-          if (cache->lines[index][cursor].dirty_f == true)
-          {
-            writeback_f = true;
-          }
-        }
-      }
-    }
-
-  log_set(index);
-  
-  }
-
-  //Task 8: Update cache->stats to keep track of n_bus_snoops and n_snoop_hits
-  //n_bus_snoops must be incremented whenever a core observes a remote bus event
-  //n_snoop_hits must be incremented whenever a remote bus event concerns a VALID 
-  //cache line in the local cache
-  bool bus_snoop = false; 
-  bool snoop_hit = false; 
-
-  if(action == LD_MISS || action == ST_MISS){
-    if(hit)
-      snoop_hit = true; 
-    bus_snoop = true; 
-    //TODO: take these booleans and use them in update_stats()
-  }
-  //update stats
-  update_stats(cache->stats, hit, writeback_f, false, action);
   return hit;
 }
-
-bool msi_access_cache(cache_t *cache, unsigned long addr, enum action_t action){
-  
-}
-
