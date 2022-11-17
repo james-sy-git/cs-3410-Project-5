@@ -30,6 +30,6 @@ typedef struct {
 
 cache_stats_t *make_cache_stats();
 void calculate_stat_rates(cache_stats_t *stats, int block_size);
-void update_stats(cache_stats_t *stats, bool hit_f, bool writeback_f, bool upgrade_miss_f, enum action_t action);
+void update_stats(cache_stats_t *stats, bool hit_f, bool writeback_f, bool upgrade_miss_f, bool bus_snoop, bool snoop_hit, enum action_t action);
 
 #endif  // CACHE_STATS
