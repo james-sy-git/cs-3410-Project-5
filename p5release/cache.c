@@ -128,7 +128,13 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       log_way(lru);
       cache->lines[index][cache->lru_way[index]].tag = tag; // kick original data out, update tag
       // valid data at here
-      cache->lines[index][cache->lru_way[index]].state = VALID;
+      // lru becomes VALID if not MSI; SHARED if MSI (Shared is valid + NOT dirty)
+      if (cache->protocol == MSI) {
+        cache->lines[index][cache->lru_way[index]].state = SHARED;
+      }
+      else {
+        cache->lines[index][cache->lru_way[index]].state = VALID;
+      }
 
       //increment lru sinced we are kicking original data out. 
       int res = (cache->lru_way[index] +1) % cache->assoc; 
@@ -150,6 +156,10 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // printf("write hit lru %d\n", res);
 
       cache->lines[index][cursor].dirty_f = true; // set dirty to the hit line to true
+      // If in the MSI protocol, a store hit on the local cache turns the state from shared to modified
+      if (cache->protocol == MSI) {
+        cache->lines[index][cursor].state = MODIFIED;
+      }
       log_way(cursor);
       
     }else{
@@ -168,7 +178,13 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // set dirty
       cache->lines[index][cache->lru_way[index]].dirty_f = true;
       // valid data at here
-      cache->lines[index][cache->lru_way[index]].state = VALID;
+      // If in MSI protocol, a store occurs on the local cache, its state becomes MODIFIED
+      if (cache->protocol == MSI){
+        cache->lines[index][cache->lru_way[index]].state = MODIFIED;
+      }
+      else {
+        cache->lines[index][cache->lru_way[index]].state = VALID;
+      }
 
       // update lru
       int res = (cache->lru_way[index] + 1) % cache->assoc; 
