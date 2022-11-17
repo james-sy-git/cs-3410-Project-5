@@ -110,15 +110,17 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  */
 int count = 0;
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  if(cache->protocol == MSI){
-    msi_access_cache(cache, addr, action);
-  }
+  // if(cache->protocol == MSI){
+  //   msi_access_cache(cache, addr, action);
+  // }
   count++;
   
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
-  
+  printf("get here\n");
+
   int lru = cache->lru_way[index];
+  printf("get here\n");
 
   // printf("get here 2\n");
   // regardless of load or store, if tag match means cache hit
@@ -241,11 +243,7 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
     //TODO: take these booleans and use them in update_stats()
   }
   //update stats
-  update_stats(cache->stats, hit, writeback_f, false, action);
+  update_stats(cache->stats, hit, writeback_f, false, bus_snoop, snoop_hit, action);
   return hit;
-}
-
-bool msi_access_cache(cache_t *cache, unsigned long addr, enum action_t action){
-  
 }
 
