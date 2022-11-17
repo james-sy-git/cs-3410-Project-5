@@ -212,8 +212,8 @@ bool msi_helper(cache_t *cache, enum action_t action, bool hit, unsigned long in
     }
     else if (action == ST_MISS) {
       if (cache->lines[index][cursor].state != INVALID) {
-        cache->lines[index][cursor].state = INVALID;
         ret = (cache->lines[index][cursor].state == MODIFIED);
+        cache->lines[index][cursor].state = INVALID;
       }
     }
   }
