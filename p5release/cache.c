@@ -30,7 +30,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
 
   cache->lines = malloc(cache->n_set * sizeof(cache_line_t*));
   for(int i = 0; i< cache->n_set; i++){
-    cache->lines[i]=malloc(sizeof(cache_line_t*) * assoc);
+    cache->lines[i]=malloc(sizeof(cache_line_t) * assoc);
   }
   cache->lru_way = NULL;
 
@@ -109,16 +109,51 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  * Use the "get" helper functions above. They make your life easier.
  */
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  // FIX THIS CODE!
+  if(cache->protocol == MSI){
+    msi_access_cache(cache, addr, action);
+  }
 
-  unsigned long tag = get_cache_tag(cache, addr);
-  unsigned long index = get_cache_index(cache, addr);
-  unsigned long block_addr = get_cache_block_addr(cache, addr);
-  
-  cache_line_t line = cache->lines[index][0];
+  //TASK 9
+  //cursor is Angela's tracker of way
+  int cursor = 0; 
+  bool wb = false; 
+  //Task 9
+  if (cache->protocol == VI)
+  {
+    if (hit)
+    {
+      if (action == LD_MISS || action == ST_MISS)
+      {
+        if (line.state == VALID)
+        {
+          cache->lines[index][cursor].state = INVALID;
+          if (line.dirty_f == true)
+          {
+            wb = true;
+          }
+        }
+      }
+    }
+  }
 
-  bool hit = line.tag == tag;
-  cache->lines[index][0].tag = tag;
+  //Task 8: Update cache->stats to keep track of n_bus_snoops and n_snoop_hits
+  //n_bus_snoops must be incremented whenever a core observes a remote bus event
+  //n_snoop_hits must be incremented whenever a remote bus event concerns a VALID 
+  //cache line in the local cache
+  bool bus_snoop = false; 
+  bool snoop_hit = false; 
 
+  if(action == LD_MISS || action == ST_MISS){
+    if(hit)
+      snoop_hit = true; 
+    bus_snoop = true; 
+    //TODO: take these booleans and use them in update_stats()
+  }
+  //update stats
   return hit;
 }
+
+bool msi_access_cache(cache_t *cache, unsigned long addr, enum action_t action){
+  
+}
+
