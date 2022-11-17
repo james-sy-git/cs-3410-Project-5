@@ -100,45 +100,19 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
 }
 
 
-/* this method takes a cache, an address, and an action
- * it proceses the cache access. functionality in no particular order: 
- *   - look up the address in the cache, determine if hit or miss
- *   - update the LRU_way, cacheTags, state, dirty flags if necessary
- *   - update the cache statistics (call update_stats)
- * return true if there was a hit, false if there was a miss
- * Use the "get" helper functions above. They make your life easier.
- */
-int count = 0;
-bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  count++;
-  
-  unsigned long tag = get_cache_tag(cache, addr);
-  unsigned long index = get_cache_index(cache, addr);
-  
+/**
+ * Performs load/store action on the local thread
+ * Returns: true if there is a write back, false otherwise 
+ * Effect: Increment lru to its supposed location 
+ * Effect: log way and log set 
+ * Effect: change cache state to VALID 
+ * Effect: set the dirty bit appropriately
+ * Effect: Update tag as necessary
+*/
+bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, enum action_t action, bool hit, int cursor){
+  bool writeback_f = false;
   int lru = cache->lru_way[index];
 
-  // printf("get here 2\n");
-  // regardless of load or store, if tag match means cache hit
-  bool hit = false;
-  int cursor = 0; 
-  // printf("tag to find: %lx\n", tag);
-  // printf("get here 3\n");
-
-
-  while(cursor < cache->assoc){
-    // printf("current cursor: %d\n", cursor);
-    // printf("tag at cursor: %lx\n", cache->lines[index][cursor].tag);
-    if(cache->lines[index][cursor].tag == tag && 
-        cache->lines[index][cursor].state != INVALID){
-      hit = true;
-      // printf("hit\n");
-      break;
-    }
-    cursor++;
-  }
-
-  bool writeback_f = false;
- 
 
   if(action == LOAD){
     if(!hit){
@@ -204,7 +178,41 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   }
 
   log_set(index);
+
+  return writeback_f;
+}
+/* this method takes a cache, an address, and an action
+ * it proceses the cache access. functionality in no particular order: 
+ *   - look up the address in the cache, determine if hit or miss
+ *   - update the LRU_way, cacheTags, state, dirty flags if necessary
+ *   - update the cache statistics (call update_stats)
+ * return true if there was a hit, false if there was a miss
+ * Use the "get" helper functions above. They make your life easier.
+ */
+bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   
+  unsigned long tag = get_cache_tag(cache, addr);
+  unsigned long index = get_cache_index(cache, addr);
+  
+  // printf("get here 2\n");
+  // regardless of load or store, if tag match means cache hit
+  bool hit = false;
+  int cursor = 0; 
+
+  // checking for hits
+  while(cursor < cache->assoc){
+    
+    if(cache->lines[index][cursor].tag == tag && 
+        cache->lines[index][cursor].state != INVALID){
+      hit = true;
+      break;
+    }
+    cursor++;
+  }
+
+  //running load/store cache action on local thread
+  bool writeback_f = local_load_store(cache, tag, index, action, hit, cursor);
+
   //TODO: upgrade_miss_f
   update_stats(cache->stats, hit, writeback_f, false, action);
   return hit;
