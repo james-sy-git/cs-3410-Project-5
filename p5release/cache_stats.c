@@ -38,7 +38,7 @@ cache_stats_t *make_cache_stats() {
  * to correctly update on LD_MISS and ST_MISS actions
  * also need to update total_snoop_hits, total_bus_snoops
 */
-void update_stats(cache_stats_t *stats, bool hit_f, bool writeback_f, bool upgrade_miss_f, bool bus_snoop, bool snoop_hit, enum action_t action) {
+void update_stats(cache_stats_t *stats, bool hit_f, bool writeback_f, bool upgrade_miss_f, enum action_t action) {
   if (hit_f)
     stats->n_hits++;
   
@@ -51,14 +51,7 @@ void update_stats(cache_stats_t *stats, bool hit_f, bool writeback_f, bool upgra
   if (upgrade_miss_f)
     stats->n_upgrade_miss++;
 
-  if (bus_snoop)
-    stats->n_bus_snoops++;
-
-  if(snoop_hit)
-    stats->n_snoop_hits++; 
-    
-  if(!bus_snoop)
-    stats->n_cpu_accesses++;
+  stats->n_cpu_accesses++;
 }
 
 // could do this in the previous method, but that's a lot of extra divides...

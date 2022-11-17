@@ -214,9 +214,10 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   bool writeback_f = false;
   if(action == LOAD || action == STORE){
     local_load_store(cache, tag, index, action, hit, cursor);
+    update_stats(cache->stats, hit, writeback_f, false, action);
+
   }
 
   //TODO: upgrade_miss_f
-  update_stats(cache->stats, hit, writeback_f, false, action);
   return hit;
 }
