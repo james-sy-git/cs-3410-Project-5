@@ -48,7 +48,7 @@ def graph():
                     logfile = folder+"%s-%02d-%02d-%02d-%02d.out" % (
                             protocol, d, c, b, a)
                     run_exp(logfile, d, c, b, a)
-                    total_traffic[a].append(get_stats(logfile, 'B_total_traffic_wb')/100)
+                    total_traffic[a].append(get_stats(logfile, 'B_written_cache_to_bus_wb'))
 
     plots = []
     for a in total_traffic:
@@ -56,7 +56,7 @@ def graph():
         plots.append(p)
     plt.legend(plots, ['assoc %d' % a for a in assoc_range])
     plt.xscale('log', base=2)
-    plt.title('Graph #1: Total vs Cache Size')
+    plt.title('Graph #2: Total Traffic vs Cache Size')
     plt.xlabel('Capacity')
     plt.ylabel('Total Traffic')
     plt.savefig(figname)
