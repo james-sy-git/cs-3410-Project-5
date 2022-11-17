@@ -109,10 +109,10 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  * Effect: set the dirty bit appropriately
  * Effect: Update tag as necessary
 */
-bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, enum action_t action, bool hit, int cursor){
+bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, enum action_t action, bool hit, int cursor)
+{
   bool writeback_f = false;
   int lru = cache->lru_way[index];
-
 
   if(action == LOAD){
     if(!hit){
@@ -192,7 +192,6 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
   
     }
   }
-
   log_set(index);
 
   return writeback_f;
@@ -206,7 +205,6 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
  * Use the "get" helper functions above. They make your life easier.
  */
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-  
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
   
@@ -228,12 +226,40 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
 
   //running load/store cache action on local thread
   bool writeback_f = false;
+  bool bus_snoop_f = false;
+  bool snoop_hit_f = false;
   if(action == LOAD || action == STORE){
-    local_load_store(cache, tag, index, action, hit, cursor);
-    update_stats(cache->stats, hit, writeback_f, false, action);
-
+    writeback_f = local_load_store(cache, tag, index, action, hit, cursor);
+  } 
+  else if (cache->protocol == VI) // TASK 9
+  {
+    if (hit) // the ldmiss or stmiss concern local cache
+    {
+      if (action == LD_MISS || action == ST_MISS)
+      {
+        if (cache->lines[index][cursor].state == VALID) // no need to change if invalid
+        {
+          cache->lines[index][cursor].state = INVALID;
+          if (cache->lines[index][cursor].dirty_f == true)
+          {
+            writeback_f = true;
+          }
+        }
+      }
+    }
   }
+  if(action == LD_MISS || action == ST_MISS){
+    bus_snoop_f = true;
+    if(hit){
+      snoop_hit_f = true;
+    }
+  }
+  update_stats(cache->stats, hit, writeback_f, false, bus_snoop_f, snoop_hit_f, action);
 
   //TODO: upgrade_miss_f
   return hit;
+
 }
+  
+
+
