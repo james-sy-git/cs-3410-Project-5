@@ -12,9 +12,9 @@ bsize_range = [b for b in range(2, 15)]
 # capacity range
 cap_range = [c for c in range(16, 17)]
 # number of cores (1, 2, 4)
-cores = [1]
+cores = [1, 2, 4]
 # coherence protocol: (none, vi, or msi)
-protocol='none'
+protocol='vi'
 
 expname='exp3'
 figname='graph3.png'
@@ -39,7 +39,7 @@ def graph():
     folder = "results/"+expname+"/"+timestr+"/"
     os.system("mkdir -p "+folder)
 
-    miss_rate = {a:[] for a in assoc_range}
+    miss_rate = {a:[] for a in cores} # a -> lst, where a is core count
 
     for a in assoc_range:
         for b in bsize_range:
@@ -48,15 +48,15 @@ def graph():
                     logfile = folder+"%s-%02d-%02d-%02d-%02d.out" % (
                             protocol, d, c, b, a)
                     run_exp(logfile, d, c, b, a)
-                    miss_rate[a].append(get_stats(logfile, 'miss_rate')/100)
+                    miss_rate[d].append(get_stats(logfile, 'miss_rate')/100)
 
     plots = []
     for a in miss_rate:
         p,=plt.plot([2**i for i in bsize_range], miss_rate[a])
         plots.append(p)
-    plt.legend(plots, ['assoc %d' % a for a in assoc_range])
+    plt.legend(plots, ['cores %d' % a for a in cores])
     plt.xscale('log', base=2)
-    plt.title('Graph #1: Miss Rate vs Block Size')
+    plt.title('Graph #3: Miss Rate vs Block Size')
     plt.xlabel('Block Size')
     plt.ylabel('Miss Rate')
     plt.savefig(figname)

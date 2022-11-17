@@ -245,5 +245,3 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
 
 }
   
-
-
