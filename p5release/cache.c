@@ -164,7 +164,8 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
     }else {
       // if it's a load hit, no data is kicked out, no need to do anything other than logging
       // printf("get here 2\n");
-
+      int res = (cursor + 1) % cache->assoc; // update lru to next
+      cache->lru_way[index] = res;
       log_way(cursor);
     }
 
