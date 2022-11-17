@@ -48,15 +48,16 @@ void testAccessBasic(){
 void testAccessDirty(){
     cache_t *test1 = make_cache(1024, 4, 2, NONE, false);
 
-    printf("Expected: true, Actual: %d\n", access_cache(test1, 0b000111111101, LOAD));
+    printf("Expected: false, Actual: %d\n", access_cache(test1, 0b000111111101, LOAD));
     printf("Expected: false, Actual: %d\n", access_cache(test1, 0b011111111101, LOAD));
-    printf("Expected: true, Actual: %d\n", access_cache(test1,  0b000111111100, STORE));
-    printf("Expected: false, Actual: %d\n", access_cache(test1,  0b010111111101, STORE));
-    printf("Expected: false, Actual: %d\n", access_cache(test1,  0b101111111100, LOAD));
+    printf("Expected: true, Actual: %d\n",  access_cache(test1, 0b000111111100, STORE));
+    printf("Expected: false, Actual: %d\n", access_cache(test1, 0b010111111101, STORE));
+    printf("Expected: false, Actual: %d\n", access_cache(test1, 0b101111111100, LOAD));
     printf("Expected writeback count: 1, actual: %ld\n", test1->stats->n_writebacks);
-    printf("Expected: true, Actual: %d\n", access_cache(test1,  0b010111111101, STORE));
-    printf("Expected: true, Actual: %d\n", access_cache(test1,  0b101111111100, STORE));
+    printf("Expected: true, Actual: %d\n",  access_cache(test1, 0b010111111101, STORE));
+    printf("Expected: true, Actual: %d\n",  access_cache(test1, 0b101111111100, STORE));
     printf("Expected writeback count: 1, actual: %ld\n", test1->stats->n_writebacks);
+
 
 }
 int main(){

@@ -30,7 +30,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
 
   cache->lines = malloc(cache->n_set * sizeof(cache_line_t*));
   for(int i = 0; i< cache->n_set; i++){
-    cache->lines[i]=malloc(sizeof(cache_line_t*) * assoc);
+    cache->lines[i]=malloc(sizeof(cache_line_t) * assoc);
   }
   cache->lru_way = malloc(cache->n_set * sizeof(int));
 
@@ -108,32 +108,103 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
  * return true if there was a hit, false if there was a miss
  * Use the "get" helper functions above. They make your life easier.
  */
+int count = 0;
 bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
-
+  count++;
+  
   unsigned long tag = get_cache_tag(cache, addr);
   unsigned long index = get_cache_index(cache, addr);
-  unsigned long block_addr = get_cache_block_addr(cache, addr);
   
   int lru = cache->lru_way[index];
-  cache_line_t line = cache->lines[index][lru];
 
-  bool hit = line.tag == tag;
+  // printf("get here 2\n");
+  // regardless of load or store, if tag match means cache hit
+  bool hit = false;
+  int cursor = 0; 
+  // printf("tag to find: %lx\n", tag);
+  // printf("get here 3\n");
 
-  cache->lines[index][lru].tag = tag;
-  cache->lru_way[index] = (cache->lru_way[index] + 1) % cache->assoc;
 
-  // if store, not writing back
-  // if load, and the info in this line is dirty, then writeback, and set dirty to false
-  bool writeback_f = false;
-  if(action == STORE){
-    cache->lines[index][lru].dirty_f = true;
-  }else if(cache->lines[index][lru].dirty_f){
-    writeback_f = true;
-    cache->lines[index][lru].dirty_f = false;
+  while(cursor < cache->assoc){
+    // printf("current cursor: %d\n", cursor);
+    // printf("tag at cursor: %lx\n", cache->lines[index][cursor].tag);
+    if(cache->lines[index][cursor].tag == tag && 
+        cache->lines[index][cursor].state != INVALID){
+      hit = true;
+      // printf("hit\n");
+      break;
+    }
+    cursor++;
   }
 
+  bool writeback_f = false;
+ 
+
+  if(action == LOAD){
+    if(!hit){
+      // printf("get here 1\n");
+
+      // bring new memory into lru
+      if(cache->lines[index][cache->lru_way[index]].dirty_f){
+        writeback_f = true; //writeback original dirty data
+        // printf("load write back\n");
+        cache->lines[index][cache->lru_way[index]].dirty_f = false;
+      }
+
+      log_way(lru);
+      cache->lines[index][cache->lru_way[index]].tag = tag; // kick original data out, update tag
+      // valid data at here
+      cache->lines[index][cache->lru_way[index]].state = VALID;
+
+      //increment lru sinced we are kicking original data out. 
+      int res = (cache->lru_way[index] +1) % cache->assoc; 
+      cache->lru_way[index] = res;
+      // printf("read lru %d\n", res);
+
+    }else {
+      // if it's a load hit, no data is kicked out, no need to do anything other than logging
+      // printf("get here 2\n");
+
+      log_way(cursor);
+    }
+
+  }else if(action == STORE){
+    if(hit){
+      int res = (cursor + 1) % cache->assoc; // update lru to next
+      cache->lru_way[index] = res;
+      // printf("write hit lru %d\n", res);
+
+      cache->lines[index][cursor].dirty_f = true; // set dirty to the hit line to true
+      log_way(cursor);
+      
+    }else{
+      // store miss, writing to lru
+      if(cache->lines[index][cache->lru_way[index]].dirty_f){
+        // if data at lru is dirty, write back first
+        writeback_f = true; 
+        // printf("store write back\n");
+
+      }
+      
+      // log way: 
+      log_way(lru);
+      // kick out data first
+      cache->lines[index][cache->lru_way[index]].tag = tag;
+      // set dirty
+      cache->lines[index][cache->lru_way[index]].dirty_f = true;
+      // valid data at here
+      cache->lines[index][cache->lru_way[index]].state = VALID;
+
+      // update lru
+      int res = (cache->lru_way[index] + 1) % cache->assoc; 
+      cache->lru_way[index] = res;
+  
+    }
+  }
+
+  log_set(index);
+  
   //TODO: upgrade_miss_f
   update_stats(cache->stats, hit, writeback_f, false, action);
-  
   return hit;
 }
