@@ -200,10 +200,6 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
 /**
  * helper method to handle state changes and writebacks
  * for MSI protocol
- * 
- * 
- * 
- * 
  */
 bool msi_helper(cache_t *cache, enum action_t action, bool hit, unsigned long index, int cursor) {
   bool ret = false; // return value
@@ -212,14 +208,13 @@ bool msi_helper(cache_t *cache, enum action_t action, bool hit, unsigned long in
       if (cache->lines[index][cursor].state == MODIFIED) {
         cache->lines[index][cursor].state = SHARED;
         ret = true;
+      }
     }
     else if (action == ST_MISS) {
       if (cache->lines[index][cursor].state != INVALID) {
         cache->lines[index][cursor].state = INVALID;
         ret = (cache->lines[index][cursor].state == MODIFIED);
       }
-    }
-
     }
   }
   return ret;
@@ -278,7 +273,7 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
       }
     }
   }
-  else if (cache->protocol == MSI) {// TASK 10 
+  else if (cache->protocol == MSI) { // TASK 10 
     writeback_f = msi_helper(cache, action, hit, index, cursor);
   }
   if(action == LD_MISS || action == ST_MISS){
