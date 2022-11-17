@@ -14,10 +14,10 @@ cap_range = [c for c in range(16, 17)]
 # number of cores (1, 2, 4)
 cores = [1, 2, 4]
 # coherence protocol: (none, vi, or msi)
-protocol='vi'
+protocol='msi'
 
-expname='exp3'
-figname='graph3.png'
+expname='exp4'
+figname='graph4.png'
 
 
 def get_stats(logfile, key):
@@ -56,7 +56,7 @@ def graph():
         plots.append(p)
     plt.legend(plots, ['core %d' % a for a in cores])
     plt.xscale('log', base=2)
-    plt.title('Graph #3: Miss Rate vs Block Size')
+    plt.title('Graph #4: Miss Rate vs Block Size')
     plt.xlabel('Block Size')
     plt.ylabel('Miss Rate')
     plt.savefig(figname)
