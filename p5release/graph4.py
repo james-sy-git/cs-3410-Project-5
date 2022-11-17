@@ -6,18 +6,18 @@ import time
 import matplotlib.pyplot as plt
 
 # associtivity range
-assoc_range = [1, 2, 4]
+assoc_range = [4]
 # block size range
-bsize_range = [b for b in range(6, 7)]
+bsize_range = [b for b in range(2, 15)]
 # capacity range
-cap_range = [c for c in range(10, 22)]
+cap_range = [c for c in range(16, 17)]
 # number of cores (1, 2, 4)
-cores = [1]
+cores = [1, 2, 4]
 # coherence protocol: (none, vi, or msi)
-protocol='none'
+protocol='msi'
 
-expname='exp2'
-figname='graph2.png'
+expname='exp4'
+figname='graph4.png'
 
 
 def get_stats(logfile, key):
@@ -39,7 +39,7 @@ def graph():
     folder = "results/"+expname+"/"+timestr+"/"
     os.system("mkdir -p "+folder)
 
-    total_traffic = {a:[] for a in assoc_range}
+    miss_rate = {a:[] for a in cores}
 
     for a in assoc_range:
         for b in bsize_range:
@@ -48,17 +48,17 @@ def graph():
                     logfile = folder+"%s-%02d-%02d-%02d-%02d.out" % (
                             protocol, d, c, b, a)
                     run_exp(logfile, d, c, b, a)
-                    total_traffic[a].append(get_stats(logfile, 'B_written_cache_to_bus_wb'))
+                    miss_rate[d].append(get_stats(logfile, 'miss_rate')/100)
 
     plots = []
-    for a in total_traffic:
-        p,=plt.plot([2**i for i in cap_range], total_traffic[a])
+    for a in miss_rate:
+        p,=plt.plot([2**i for i in bsize_range], miss_rate[a])
         plots.append(p)
-    plt.legend(plots, ['assoc %d' % a for a in assoc_range])
+    plt.legend(plots, ['core %d' % a for a in cores])
     plt.xscale('log', base=2)
-    plt.title('Graph #2: Total Traffic vs Cache Size')
-    plt.xlabel('Capacity')
-    plt.ylabel('Total Traffic')
+    plt.title('Graph #4: Miss Rate vs Block Size')
+    plt.xlabel('Block Size')
+    plt.ylabel('Miss Rate')
     plt.savefig(figname)
     plt.show()
 
