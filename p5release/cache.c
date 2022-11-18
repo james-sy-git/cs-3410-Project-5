@@ -241,11 +241,19 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
     cursor++;
   }
 
+  if(!hit){
+    cursor = cache->lru_way[index];
+  }
+
   //running load/store cache action on local thread
   bool writeback_f = false;
   bool bus_snoop_f = false;
   bool snoop_hit_f = false;
+  bool upgrade_miss_f = false;
   if(action == LOAD || action == STORE){
+    if(action == STORE && cache->protocol == MSI && cache->lines[index][cursor].state == SHARED){
+      upgrade_miss_f = true;
+    }
     writeback_f = local_load_store(cache, tag, index, action, hit, cursor);
   } 
   else if (cache->protocol == VI) // TASK 9
@@ -274,7 +282,7 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
       snoop_hit_f = true;
     }
   }
-  update_stats(cache->stats, hit, writeback_f, false, bus_snoop_f, snoop_hit_f, action);
+  update_stats(cache->stats, hit, writeback_f, upgrade_miss_f, bus_snoop_f, snoop_hit_f, action);
 
   //TODO: upgrade_miss_f
   return hit;
