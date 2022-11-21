@@ -56,7 +56,7 @@ def graph():
         plots.append(p)
     plt.legend(plots, ['assoc %d' % a for a in assoc_range])
     plt.xscale('log', base=2)
-    plt.title('Graph #1: Miss Rate vs Cache Size')
+    plt.title('Graph #1: Miss Rate vs Cache Size on Direct Mapped Cache')
     plt.xlabel('Capacity')
     plt.ylabel('Miss Rate')
     plt.savefig(figname)

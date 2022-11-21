@@ -14,9 +14,7 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   cache->block_size = block_size;  // in Bytes
   cache->assoc = assoc;            // 1, 2, 3... etc.
 
-  // FIX THIS CODE!
-  // first, correctly set these 5 variables. THEY ARE ALL WRONG
-  // note: you may find math.h's log2 function useful
+  // initializing the struct variables
   cache->n_cache_line = capacity/block_size;
   cache->n_set = capacity/(assoc * block_size);
   cache->n_offset_bit = log2(block_size);
@@ -26,8 +24,6 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   // next create the cache lines and the array of LRU bits
   // - malloc an array with n_rows
   // - for each element in the array, malloc another array with n_col
-  // FIX THIS CODE!
-
   cache->lines = malloc(cache->n_set * sizeof(cache_line_t*));
   for(int i = 0; i< cache->n_set; i++){
     cache->lines[i]=malloc(sizeof(cache_line_t) * assoc);
@@ -36,7 +32,6 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
 
   // initializes cache tags to 0, dirty bits to false,
   // state to INVALID, and LRU bits to 0
-  // FIX THIS CODE!
   for (int i = 0; i < cache->n_set; i++) {
     for (int j = 0; j < assoc; j++) {
       cache->lines[i][j].dirty_f = false; 
@@ -59,7 +54,6 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
  * in decimal -- get_cache_tag(3921) returns 15 
  */
 unsigned long get_cache_tag(cache_t *cache, unsigned long addr) {
-  // FIX THIS CODE!
   return addr >> (ADDRESS_SIZE - cache->n_tag_bit);
 }
 
@@ -70,9 +64,7 @@ unsigned long get_cache_tag(cache_t *cache, unsigned long addr) {
  * in decimal -- get_cache_index(3921) returns 5
  */
 unsigned long get_cache_index(cache_t *cache, unsigned long addr) {
-  // FIX THIS CODE!
   addr = addr >> cache->n_offset_bit;
-  // printf("addr: %lx\n", addr);
   addr = addr << (cache->n_tag_bit + cache->n_offset_bit);
   unsigned long bitmask = 0;
   bitmask = ~bitmask >> (sizeof(long) * 8 - ADDRESS_SIZE);
@@ -284,7 +276,6 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   }
   update_stats(cache->stats, hit, writeback_f, upgrade_miss_f, bus_snoop_f, snoop_hit_f, action);
 
-  //TODO: upgrade_miss_f
   return hit;
 
 }

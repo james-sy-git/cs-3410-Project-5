@@ -56,7 +56,7 @@ def graph():
         plots.append(p)
     plt.legend(plots, ['assoc %d' % a for a in assoc_range])
     plt.xscale('log', base=2)
-    plt.title('Graph #2: Total Traffic vs Cache Size')
+    plt.title('Graph #2: Total Traffic vs Cache Size with Set Associative Caches')
     plt.xlabel('Capacity')
     plt.ylabel('Total Traffic')
     plt.savefig(figname)

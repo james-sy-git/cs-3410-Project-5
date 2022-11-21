@@ -56,7 +56,7 @@ def graph():
         plots.append(p)
     plt.legend(plots, ['core %d' % a for a in cores])
     plt.xscale('log', base=2)
-    plt.title('Graph #3: Miss Rate vs Block Size')
+    plt.title('Graph #3: Miss Rate vs Block Size using VI Protocol on Multicore')
     plt.xlabel('Block Size')
     plt.ylabel('Miss Rate')
     plt.savefig(figname)
