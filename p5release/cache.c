@@ -106,9 +106,9 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // printf("get here 1\n");
 
       // bring new memory into lru
-      if(cache->lines[index][cache->lru_way[index]].dirty_f){
+      if(cache->lines[index][cursor].dirty_f){
         writeback_f = true; //writeback original dirty data
-        cache->lines[index][cache->lru_way[index]].dirty_f = false;
+        cache->lines[index][cursor].dirty_f = false;
       }
 
       log_way(lru);
@@ -116,10 +116,10 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // valid data at here
       // lru becomes VALID if not MSI; SHARED if MSI (Shared is valid + NOT dirty)
       if (cache->protocol == MSI) {
-        cache->lines[index][cache->lru_way[index]].state = SHARED;
+        cache->lines[index][cursor].state = SHARED;
       }
       else {
-        cache->lines[index][cache->lru_way[index]].state = VALID;
+        cache->lines[index][cursor].state = VALID;
       }
 
       //increment lru sinced we are kicking original data out. 
@@ -148,7 +148,7 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       
     }else{
       // store miss, writing to lru
-      if(cache->lines[index][cache->lru_way[index]].dirty_f){
+      if(cache->lines[index][cursor].dirty_f){
         // if data at lru is dirty, write back first
         writeback_f = true; 
         // printf("store write back\n");
@@ -158,9 +158,9 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       // log way: 
       log_way(lru);
       // kick out data first
-      cache->lines[index][cache->lru_way[index]].tag = tag;
+      cache->lines[index][cursor].tag = tag;
       // set dirty
-      cache->lines[index][cache->lru_way[index]].dirty_f = true;
+      cache->lines[index][cursor].dirty_f = true;
       // valid data at here
       // If in MSI protocol, a store occurs on the local cache, its state becomes MODIFIED
       if (cache->protocol == MSI) {
