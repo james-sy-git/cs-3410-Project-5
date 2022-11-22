@@ -163,15 +163,15 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
       cache->lines[index][cache->lru_way[index]].dirty_f = true;
       // valid data at here
       // If in MSI protocol, a store occurs on the local cache, its state becomes MODIFIED
-      if (cache->protocol == MSI){
-        cache->lines[index][cache->lru_way[index]].state = MODIFIED;
+      if (cache->protocol == MSI) {
+        cache->lines[index][cursor].state = MODIFIED;
       }
       else {
-        cache->lines[index][cache->lru_way[index]].state = VALID;
+        cache->lines[index][cursor].state = VALID;
       }
 
       // update lru
-      int res = (cache->lru_way[index] + 1) % cache->assoc; 
+      int res = (cursor + 1) % cache->assoc; 
       cache->lru_way[index] = res;
   
     }
@@ -221,13 +221,16 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   // regardless of load or store, if tag match means cache hit
   bool hit = false;
   int cursor = 0; 
-
+  int store_shared = -1;
   // checking for hits
   while(cursor < cache->assoc){
     
-    if(cache->lines[index][cursor].tag == tag && 
-        cache->lines[index][cursor].state != INVALID){
+    if(cache->lines[index][cursor].tag == tag && cache->lines[index][cursor].state != INVALID){
       hit = true;
+      if(action == STORE && cache->lines[index][cursor].state == SHARED){
+        hit = false;
+        store_shared = cursor;
+      }
       break;
     }
     cursor++;
@@ -235,6 +238,9 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
 
   if(!hit){
     cursor = cache->lru_way[index];
+  }
+  if(store_shared != -1){
+    cursor = store_shared;
   }
 
   //running load/store cache action on local thread
