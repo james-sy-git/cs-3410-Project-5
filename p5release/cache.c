@@ -15,18 +15,18 @@ cache_t *make_cache(int capacity, int block_size, int assoc, enum protocol_t pro
   cache->assoc = assoc;            // 1, 2, 3... etc.
 
   // initializing the struct variables
-  cache->n_cache_line = capacity/block_size;
-  cache->n_set = capacity/(assoc * block_size);
+  cache->n_cache_line = capacity / block_size;
+  cache->n_set = capacity / (assoc * block_size);
   cache->n_offset_bit = log2(block_size);
   cache->n_index_bit = log2(capacity/(assoc * block_size));
-  cache->n_tag_bit = ADDRESS_SIZE-log2(block_size)-log2(capacity/(assoc * block_size));
+  cache->n_tag_bit = ADDRESS_SIZE-log2(block_size)-log2(capacity / (assoc * block_size));
 
   // next create the cache lines and the array of LRU bits
   // - malloc an array with n_rows
   // - for each element in the array, malloc another array with n_col
   cache->lines = malloc(cache->n_set * sizeof(cache_line_t*));
-  for(int i = 0; i< cache->n_set; i++){
-    cache->lines[i]=malloc(sizeof(cache_line_t) * assoc);
+  for(int i = 0; i < cache->n_set; i++){
+    cache->lines[i] = malloc(sizeof(cache_line_t) * assoc);
   }
   cache->lru_way = malloc(cache->n_set * sizeof(int));
 
@@ -89,6 +89,8 @@ unsigned long get_cache_block_addr(cache_t *cache, unsigned long addr) {
 
 /**
  * Performs load/store action on the local thread
+ * cursor should be the way to write it to, with lru considered, this function does 
+ * updates lru based on cursor
  * Returns: true if there is a write back, false otherwise 
  * Effect: Increment lru to its supposed location 
  * Effect: log way and log set 
@@ -103,9 +105,7 @@ bool local_load_store(cache_t *cache, unsigned long tag, unsigned long index, en
 
   if(action == LOAD){
     if(!hit){
-      // printf("get here 1\n");
-
-      // bring new memory into lru
+      // bring new memory 
       if(cache->lines[index][cursor].dirty_f){
         writeback_f = true; //writeback original dirty data
         cache->lines[index][cursor].dirty_f = false;
@@ -245,9 +245,8 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
 
   //running load/store cache action on local thread
   bool writeback_f = false;
-  bool bus_snoop_f = false;
-  bool snoop_hit_f = false;
   bool upgrade_miss_f = false;
+  
   if(action == LOAD || action == STORE){
     if(action == STORE && cache->protocol == MSI && cache->lines[index][cursor].state == SHARED){
       upgrade_miss_f = true;
@@ -274,13 +273,7 @@ bool access_cache(cache_t *cache, unsigned long addr, enum action_t action) {
   else if (cache->protocol == MSI) { // TASK 10 
     writeback_f = msi_helper(cache, action, hit, index, cursor);
   }
-  if(action == LD_MISS || action == ST_MISS){
-    bus_snoop_f = true;
-    if(hit){
-      snoop_hit_f = true;
-    }
-  }
-  update_stats(cache->stats, hit, writeback_f, upgrade_miss_f, bus_snoop_f, snoop_hit_f, action);
+  update_stats(cache->stats, hit, writeback_f, upgrade_miss_f, action);
 
   return hit;
 
